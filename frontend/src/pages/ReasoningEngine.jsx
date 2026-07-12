@@ -111,14 +111,14 @@ export default function ReasoningEngine() {
                         <div className="r-fact-box h-100">
                             <div className="r-fact-label">Your Registered Output</div>
                             <div className={`r-fact-value ${r.is_correct ? 'text-success' : 'text-danger text-decoration-line-through'}`}>
-                                {r.user_answer && r.user_answer !== 'Not Answered' ? r.user_answer : <span className="text-muted">Unassigned Variable</span>}
+                                {r.user_answer && r.user_answer !== 'Not Answered' ? <span dangerouslySetInnerHTML={{__html: renderQuestion(r.user_answer)}} /> : <span className="text-muted">Unassigned Variable</span>}
                             </div>
                         </div>
                     </div>
                     <div className="col-md-6">
                         <div className="r-fact-box h-100">
                             <div className="r-fact-label">Absolute Reference Constant</div>
-                            <div className="r-fact-value text-success">{r.correct_answer}</div>
+                            <div className="r-fact-value text-success" dangerouslySetInnerHTML={{__html: renderQuestion(r.correct_answer)}} />
                         </div>
                     </div>
                 </div>
@@ -387,7 +387,7 @@ export default function ReasoningEngine() {
                               checked={answers[currentQ] === opt}
                               onChange={() => setAnswers({...answers, [currentQ]: opt})}
                             />
-                            <span>{opt}</span>
+                            <span dangerouslySetInnerHTML={{__html: renderQuestion(opt)}} />
                         </label>
                     ))}
                 </div>
