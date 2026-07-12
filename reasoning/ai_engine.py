@@ -7,7 +7,7 @@ def generate_quiz(topic, level):
     import json
     load_dotenv()
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-    GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     prompt = f"""
 You are an expert aptitude and reasoning question generator.
 
