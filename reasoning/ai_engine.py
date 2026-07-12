@@ -91,7 +91,10 @@ Include a balanced mix of:
 
     except Exception as e:
         import traceback
-        with open("ai_engine_error.log", "w") as f:
-            f.write(traceback.format_exc())
+        try:
+            with open("ai_engine_error.log", "w") as f:
+                f.write(traceback.format_exc())
+        except Exception:
+            pass
         print("QUIZ ERROR:", str(e))
         return []
