@@ -32,10 +32,11 @@ ALLOWED_HOSTS = ['*'] # In production, set this strictly using os.environ.get('A
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
+    'https://ai-test-platform-red.vercel.app',
 ]
 # For production add: os.environ.get('FRONTEND_URL') to CORS_ALLOWED_ORIGINS if available
 if os.environ.get('FRONTEND_URL'):
-    CORS_ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
+    CORS_ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL').rstrip('/'))
 
 # Application definition
 
