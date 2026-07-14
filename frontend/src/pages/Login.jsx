@@ -17,6 +17,7 @@ export default function Login({ setToken }) {
       });
       setToken(res.data.access);
     } catch (err) {
+      console.error("Google Auth Error:", err.response?.data);
       setError('Google Authentication failed. Please try again.');
     }
   };

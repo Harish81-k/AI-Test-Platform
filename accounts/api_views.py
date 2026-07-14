@@ -130,9 +130,11 @@ class GoogleLoginAPIView(APIView):
 
         except Exception as e:
             print("Unexpected Google Login Error")
-            traceback.print_exc()
+            import traceback
+            tb = traceback.format_exc()
+            print(tb)
 
             return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"error": f"Unexpected error: {str(e)}", "traceback": tb},
+                status=status.HTTP_400_BAD_REQUEST,
             )
