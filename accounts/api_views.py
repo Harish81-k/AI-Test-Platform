@@ -1,39 +1,41 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
+from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import serializers
 
-# Google Auth imports
 from google.oauth2 import id_token
 from google.auth.transport import requests
-import os
+
+from django.conf import settings
+import traceback
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email')
+        fields = ("id", "username", "email")
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ("id", "username", "email", "password")
+        extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            password=validated_data['password']
+        return User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data.get("email", ""),
+            password=validated_data["password"],
         )
-        return user
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
+
 
 class UserProfileView(generics.RetrieveAPIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -42,59 +44,95 @@ class UserProfileView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+
 class GoogleLoginAPIView(APIView):
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        token = request.data.get('credential')
-        if not token:
-            return Response({"error": "No credential provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        credential = request.data.get("credential")
+
+        if not credential:
+            return Response(
+                {"error": "Google credential is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            # We skip CLIENT_ID verification if we just want a placeholder
-            # Or we can verify it if the client id is set in env
-            # For this decoupled project we will just parse it securely without verifying the audience 
-            # if the client ID isn't provided, but it's best practice to verify.
-            # Using google.oauth2.id_token.verify_oauth2_token handles signature verification automatically.
-            CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "290960187669-jtj6rvhjs6pos6eo19fioo4r7adrmh7h.apps.googleusercontent.com")
-            
-            # Since the user might be using a dummy client id, we'll verify the JWT signature and expiration
-            # but we won't strictly enforce the audience to match the dummy string to prevent immediate crashes during testing,
-            # unless they provide a real one.
-            try:
-                idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
-            except ValueError:
-                # Fallback: if audience verification fails because they used a dummy client id in backend but real in frontend,
-                # we can verify without audience check just for the sake of this prototype.
-                idinfo = id_token.verify_oauth2_token(token, requests.Request())
-                
-            email = idinfo.get('email')
-            name = idinfo.get('name', '')
-            
+            print("========== GOOGLE LOGIN ==========")
+            print("Credential received:", credential[:40], "...")
+
+            idinfo = id_token.verify_oauth2_token(
+                credential,
+                requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+
+            email = idinfo.get("email")
+            name = idinfo.get("name", "")
+            email_verified = idinfo.get("email_verified", False)
+
+            print("Email:", email)
+
             if not email:
-                return Response({"error": "Google token did not contain an email"}, status=status.HTTP_400_BAD_REQUEST)
-                
-            # Get or create the user securely, ensuring unique username
-            base_username = email.split('@')[0]
-            username = base_username
+                return Response(
+                    {"error": "Email not found in Google token."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if not email_verified:
+                return Response(
+                    {"error": "Google email is not verified."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            username = email.split("@")[0]
+
             counter = 1
+            original_username = username
+
             while User.objects.filter(username=username).exclude(email=email).exists():
-                username = f"{base_username}{counter}"
+                username = f"{original_username}{counter}"
                 counter += 1
-                
-            user, created = User.objects.get_or_create(email=email, defaults={'username': username})
-            
-            # Generate JWT pair
+
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    "username": username,
+                    "first_name": name,
+                },
+            )
+
             refresh = RefreshToken.for_user(user)
-            
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': {
-                    'email': user.email,
-                    'username': user.username
-                }
-            })
-            
+
+            return Response(
+                {
+                    "message": "Login successful",
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except ValueError as e:
+            print("Google Token Verification Error")
+            traceback.print_exc()
+
+            return Response(
+                {"error": f"Google verification failed: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         except Exception as e:
-            return Response({"error": f"Invalid token or verification failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            print("Unexpected Google Login Error")
+            traceback.print_exc()
+
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
