@@ -81,6 +81,7 @@ export default function CodingEngine() {
         setQuiz(null);
       }
     } catch (err) {
+      console.error("Quiz Generation Error:", err.response?.data);
       alert('Failed to generate coding quiz');
       setQuiz(null);
     } finally {

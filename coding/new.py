@@ -10,7 +10,7 @@ def generate_coding_questions(level):
     prompt = f"""
 You are an expert programming question generator.
 
-Generate between 5 and 8 coding questions for a technical interview or practice test.
+Generate 3 coding questions for a technical interview or practice test.
 
 Difficulty: {level}
 
@@ -20,7 +20,7 @@ Difficulty Guidelines:
 - advanced: Dynamic programming, graphs, trees, complex algorithms. (e.g. Longest Increasing Subsequence, Graph BFS)
 
 Rules:
-1. Generate between 5 and 8 coding questions.
+1. Generate exactly 3 coding questions.
 2. Provide 'title', 'description', 'input_format', 'output_format', 'constraints', 'stub' (starter code in Python), 'sample_input', 'sample_output'.
 CRITICAL: The 'stub' MUST ONLY contain the function signature, necessary class definitions, and an empty function body (using 'pass' or 'return None'). NEVER include the actual solution or implementation logic inside the stub!
 3. Include an array of 'hidden_tests', each being an object with 'input' and 'output'. Provide exactly 3 hidden tests for each question.
