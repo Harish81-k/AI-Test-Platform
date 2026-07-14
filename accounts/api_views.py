@@ -56,7 +56,7 @@ class GoogleLoginAPIView(APIView):
             # For this decoupled project we will just parse it securely without verifying the audience 
             # if the client ID isn't provided, but it's best practice to verify.
             # Using google.oauth2.id_token.verify_oauth2_token handles signature verification automatically.
-            CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "YOUR_GOOGLE_CLIENT_ID")
+            CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "290960187669-jtj6rvhjs6pos6eo19fioo4r7adrmh7h.apps.googleusercontent.com")
             
             # Since the user might be using a dummy client id, we'll verify the JWT signature and expiration
             # but we won't strictly enforce the audience to match the dummy string to prevent immediate crashes during testing,
