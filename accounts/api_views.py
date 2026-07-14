@@ -95,13 +95,15 @@ class GoogleLoginAPIView(APIView):
                 username = f"{original_username}{counter}"
                 counter += 1
 
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    "username": username,
-                    "first_name": name,
-                },
-            )
+            users = User.objects.filter(email=email)
+            if users.exists():
+                user = users.first()
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=name,
+                )
 
             refresh = RefreshToken.for_user(user)
 
