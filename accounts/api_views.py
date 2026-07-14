@@ -74,8 +74,15 @@ class GoogleLoginAPIView(APIView):
             if not email:
                 return Response({"error": "Google token did not contain an email"}, status=status.HTTP_400_BAD_REQUEST)
                 
-            # Get or create the user
-            user, created = User.objects.get_or_create(email=email, defaults={'username': email.split('@')[0]})
+            # Get or create the user securely, ensuring unique username
+            base_username = email.split('@')[0]
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exclude(email=email).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+                
+            user, created = User.objects.get_or_create(email=email, defaults={'username': username})
             
             # Generate JWT pair
             refresh = RefreshToken.for_user(user)
@@ -89,5 +96,5 @@ class GoogleLoginAPIView(APIView):
                 }
             })
             
-        except ValueError as e:
-            return Response({"error": f"Invalid token: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": f"Invalid token or verification failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
