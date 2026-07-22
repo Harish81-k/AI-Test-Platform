@@ -13,9 +13,14 @@ class GenerateCodingQuestionsAPIView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
-        level = request.data.get("difficulty", "medium")
-        questions = generate_coding_questions(level)
-        return Response({"questions": questions, "difficulty": level}, status=status.HTTP_200_OK)
+        try:
+            level = request.data.get("difficulty", "medium")
+            questions = generate_coding_questions(level)
+            return Response({"questions": questions, "difficulty": level}, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            return Response({"error": str(e), "traceback": tb}, status=status.HTTP_400_BAD_REQUEST)
 
 class SubmitCodingQuizAPIView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
